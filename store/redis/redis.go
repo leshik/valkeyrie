@@ -10,7 +10,7 @@ import (
 	"github.com/abronan/valkeyrie"
 	"github.com/abronan/valkeyrie/store"
 
-	"gopkg.in/redis.v5"
+	"github.com/go-redis/redis/v7"
 )
 
 var (
@@ -142,7 +142,8 @@ func (r *Redis) Delete(key string) error {
 
 // Exists verify if a Key exists in the store
 func (r *Redis) Exists(key string, opts *store.ReadOptions) (bool, error) {
-	return r.client.Exists(normalize(key)).Result()
+	val, err := r.client.Exists(normalize(key)).Result()
+	return val != 0, err
 }
 
 // Watch for changes on a key
@@ -234,12 +235,8 @@ type subscribe struct {
 }
 
 func newSubscribe(client *redis.Client, regex string) (*subscribe, error) {
-	ch, err := client.PSubscribe(regex)
-	if err != nil {
-		return nil, err
-	}
 	return &subscribe{
-		pubsub:  ch,
+		pubsub:  client.PSubscribe(regex),
 		closeCh: make(chan struct{}),
 	}, nil
 }
